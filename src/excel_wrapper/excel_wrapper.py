@@ -1,5 +1,4 @@
-from openmdao.main.api import Component
-from openmdao.lib.datatypes.api import Float, Int, Bool, Str
+from openmdao.api import Component
 import os
 import win32com.client
 import ast
@@ -17,30 +16,34 @@ class ExcelWrapper(Component):
         except:
             if not os.path.exists(self.xmlFile):
                 print 'Cannot find the xml file at ' + self.xmlFile
-        
+
         self.variables = tree.findall("Variable")
         for v in self.variables:
             name = v.attrib['name']
             kwargs = dict([(key, v.attrib[key]) for key in ('iotype', 'desc', 'units') if key in v.attrib])
+            print v.attrib['name']
             if v.attrib['iotype'] == 'in':
+
                 if v.attrib['type'] == 'Float':
-                    self.add(v.attrib['name'], Float(float(v.attrib['value']), **kwargs))
+                    print v.attrib['name']
+                    self.add_param(v.attrib['name'],float(v.attrib['value']), **kwargs)
                 elif v.attrib['type'] == 'Int':
-                    self.add(v.attrib['name'], Int(int(v.attrib['value']), **kwargs))
+                    self.add_param(v.attrib['name'], int(v.attrib['value']), **kwargs)
                 elif v.attrib['type'] == 'Bool':
-                    self.add(v.attrib['name'], Bool(ast.literal_eval(v.attrib['value']), **kwargs))
+                    self.add_param(v.attrib['name'], ast.literal_eval(v.attrib['value']), **kwargs)
                 elif v.attrib['type'] == 'Str':
-                    self.add(v.attrib['name'], Str(v.attrib['value'], **kwargs))
+                    self.add_param(v.attrib['name'], v.attrib['value'], **kwargs)
+
             else:
                 if v.attrib['type'] == 'Float':
-                    self.add(v.attrib['name'], Float(**kwargs))
+                    self.add_output(v.attrib['name'], 1.0)
                 elif v.attrib['type'] == 'Int':
-                    self.add(v.attrib['name'], Int(**kwargs))
+                    self.add_output(v.attrib['name'],  1)
                 elif v.attrib['type'] == 'Bool':
-                    self.add(v.attrib['name'], Bool(**kwargs))
+                    self.add_output(v.attrib['name'], True)
                 elif v.attrib['type'] == 'Str':
-                    self.add(v.attrib['name'], Str(**kwargs))
-        
+                    self.add_output(v.attrib['name'], "abc")
+
         self.excelFile = excelFile
         self.xlInstance = None
         self.workbook = None
@@ -48,14 +51,14 @@ class ExcelWrapper(Component):
         if not os.path.exists(self.excelFile):
             print "Invalid file given"
             self.ExcelConnectionIsValid = False
-        
+
         else:
             self.excelFile = os.path.abspath(self.excelFile)
             xl = self.openExcel()
             if xl is None:
                 print "Connection to Excel failed."
                 self.ExcelConnectionIsValid = False
-            
+
             else:
                 self.xlInstance = xl
                 self.workbook = xl.Workbooks.Open(self.excelFile)
@@ -64,29 +67,30 @@ class ExcelWrapper(Component):
     def __del__(self):
         if self.workbook is not None:
             self.workbook.Close(SaveChanges=False)
-        
+
         if self.xlInstance is not None:
             del(self.xlInstance)
-            self.xlInstance = None        
+            self.xlInstance = None
     # End __del__
 
     def openExcel(self):
         try:
             xl = win32com.client.Dispatch("Excel.Application")
-        
+
         except:
             return None
-        
+
         return xl
     # End openExcel
 
-    def execute(self):
+    def solve_nonlinear(self, params, unknowns, resids):
+
         if not self.ExcelConnectionIsValid or \
             self.xlInstance is None or \
-            self.workbook is None:
+                self.workbook is None:
             print "Aborted Execution of Bad ExcelWrapper Component Instance"
             return
-        
+
         wb = self.workbook
         namelist = [x.name for x in wb.Names]
 
@@ -94,7 +98,7 @@ class ExcelWrapper(Component):
             name = v.attrib['name']
 
             if v.attrib['iotype'] == 'in':
-                    self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = v.attrib['value']        
+                    self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
             else:
                 try:
                     excel_value = self.xlInstance.Range(wb.Names(name).RefersToLocal).Value
@@ -104,24 +108,11 @@ class ExcelWrapper(Component):
                         print 'Error: ' + name + ' is not defined in ' + self.excelFile
 
                 if v.attrib['type'] == 'Float':
-                    vars(self)[name] = float(excel_value)
+                    unknowns[name] = float(excel_value)
                 elif v.attrib['type'] == 'Int':
-                    vars(self)[name] = int(excel_value)
+                    unknowns[name] = int(excel_value)
+                    print int(excel_value)
                 elif v.attrib['type'] == 'Bool':
-                    vars(self)[name] = excel_value
+                   unknowns[name] = excel_value
                 elif v.attrib['type'] == 'Str':
-                    vars(self)[name] = excel_value
-    # End execute
-# End ExcelWrapper class
-
-if __name__ == '__main__':
-    excelFile = r"test/excel_wrapper_test.xlsx"
-    xmlFile = r"test/excel_wrapper_test.xml"
-    ew = ExcelWrapper(excelFile, xmlFile)
-    ew.execute()
-    print '2.12345*%i = %f' %(ew.x, ew.y)
-    print '~%s = %s' %(ew.b, ew.bout)
-    print 'lower(%s) = %s' %(ew.s, ew.sout) 
-    del(ew)
-    os._exit(1)
-# End excel_wrapper.py
+                    unknowns[name] = excel_value

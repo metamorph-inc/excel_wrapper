@@ -6,7 +6,7 @@
 
 from setuptools import setup, find_packages
 
-kwargs = {'author': 'Zsolt Lattmann',
+kwargs = {'author': 'Metamorph',
  'author_email': '',
  'classifiers': ['Intended Audience :: Science/Research',
                  'Topic :: Scientific/Engineering'],
