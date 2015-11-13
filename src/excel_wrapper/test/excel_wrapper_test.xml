@@ -1,9 +1,11 @@
 <?xml version = "1.0"?>
 <Variables>
-    <Variable name="x" type="Int" iotype="in" value="1" desc="integer x"/>
-    <Variable name="s" type="Str" iotype="in" value="Hello World!"/>
-    <Variable name="b" type="Bool" iotype="in" value="False" desc="boolean b"/>
+    <Variable name="x"  row = "2" column = "B" type="Int" iotype="in" value="12" desc="integer x"/>
+    <Variable name="s" sheet="sheet1" row = "3" column = "B" type="Str" iotype="in" value="Hello World!"/>
+    <Variable name="b" sheet="sheet1" row = "4" column = "B" type="Bool" iotype="in" value="False" desc="boolean b"/>
     <Variable name="y" type="Float" iotype="out" desc="float y"/>
-    <Variable name="bout" type="Bool" iotype="out" desc="boolean bout"/>
-    <Variable name="sout" type="Str" iotype="out" desc="string sout"/>
+    <Variable name="bout"  sheet="sheet1" row = "3" column = "F" type="Bool" iotype="out" desc="boolean bout"/>
+    <Variable name="sout" sheet="sheet1" row = "4" column = "F" type="Str" iotype="out" desc="string sout"/>
+	<Variable name="sin_in" sheet="sheet1" row="5" column="B" type="Float" iotype="in" value ="1.0" desc="input to sin function" />
+	<Variable name="sin_out" sheet="sheet2" row="1" column="A" type="Float" iotype="out" desc="output of sin function" />
 </Variables>
