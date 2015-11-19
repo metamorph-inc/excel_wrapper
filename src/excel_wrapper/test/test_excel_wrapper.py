@@ -4,7 +4,8 @@ import nose
 import sys
 import logging
 import os
-from openmdao.api import IndepVarComp, Group, Problem
+from openmdao.api import IndepVarComp, Group, Problem, DumpRecorder
+from excel_wrapper import ExcelWrapper
 
 
 class ExcelWrapperTestCase(unittest.TestCase):
@@ -23,14 +24,15 @@ class ExcelWrapperTestCase(unittest.TestCase):
         root = prob.root = Group()
         excelFile = r"excel_wrapper_test.xlsx"
         xmlFile = r"excel_wrapper_test.xml"
-        root.add('ew', ExcelWrapper(excelFile, xmlFile),promotes=['*'])
+        jsonFile = r"testjson_1.json"
+        root.add('ew', ExcelWrapper(excelFile, jsonFile,True),promotes=['*'])
         prob.setup()
         prob.run()
 
-        self.assertEqual((2.1* prob['x']),prob['y'],"Excel Wrapper failed for FLoat values")
-        self.assertEqual((not prob['b']),prob['bout'],"Excel Wrapper failed for Boolean Values")
+        self.assertEqual((2.1* float(prob['x'])),prob['y'],"Excel Wrapper failed for FLoat values")
+        self.assertEqual((bool(prob['b'])),prob['bout'],"Excel Wrapper failed for Boolean Values")
         self.assertEqual(prob['s'].lower(),prob['sout'],"Excel Wrapper failed for String values")
-        self.assertEqual(prob['sheet1_in']+100,prob['sheet2_out'],"Excel wrapper fails in multiple sheets")
+        self.assertEqual(float(prob['sheet1_in'])+100,prob['sheet2_out'],"Excel wrapper fails in multiple sheets")
 
 
 
