@@ -10,21 +10,16 @@ class ExcelWrapper(Component):
 
     def __init__(self, excelFile, varFile):
         super(ExcelWrapper, self).__init__()
-        self.Var_dict = None
-        self.json_True = False
-        if varFile.endswith('.json'):
-            self.json_true = True
-        elif varFile.endswith('.xml'):
-            self.json_True = False
+        self.var_dict = None
 
-        if not self.json_true:
+        if not varFile.endswith('.json'):
             self.xmlFile = varFile
             self.create_xml_dict()
         else:
             self.jsonFile = varFile
             self.create_json_dict()
 
-        for key, value in self.Var_dict.items():
+        for key, value in self.var_dict.items():
             if key == "params":
                 for z in value:
                     self.add_param(**z)
@@ -39,20 +34,13 @@ class ExcelWrapper(Component):
         self.xl_sheet = None
         self.ExcelConnectionIsValid = True
         if not os.path.exists(self.excelFile):
-            print "Invalid file given"
-            self.ExcelConnectionIsValid = False
+            open(self.excelFile)
 
-        else:
-            self.excelFile = os.path.abspath(self.excelFile)
-            xl = self.openExcel()
-            if xl is None:
-                print "Connection to Excel failed."
-                self.ExcelConnectionIsValid = False
-
-            else:
-                self.xlInstance = xl
-                self.workbook = xl.Workbooks.Open(self.excelFile)
-                self.workbook = xl.ActiveWorkbook
+        self.excelFile = os.path.abspath(self.excelFile)
+        xl = self.openExcel()
+        self.xlInstance = xl
+        self.workbook = xl.Workbooks.Open(self.excelFile)
+        self.workbook = xl.ActiveWorkbook
 
     # End __init__
 
@@ -72,35 +60,24 @@ class ExcelWrapper(Component):
             if not os.path.exists(self.xmlFile):
                 print 'Cannot find the xml file at ' + self.xmlFile
 
-        self.Var_dict = {
+        self.var_dict = {
             "unknowns": [],
             "params": []
         }
         variables = tree.findall("Variable")
         for v in variables:
-            name = v.attrib['name']
             kwargs = dict([(key, v.attrib[key]) for key in ('name', 'val', 'iotype', 'desc', 'units', 'row', 'column', 'sheet', 'type') if key in v.attrib])
             if v.attrib['iotype'] == 'in':
-                self.Var_dict["params"].append(kwargs)
+                self.var_dict["params"].append(kwargs)
             elif v.attrib['iotype'] == 'out':
-                self.Var_dict["unknowns"].append(kwargs)
+                self.var_dict["unknowns"].append(kwargs)
 
     def create_json_dict(self):
-        try:
-            with open(self.jsonFile) as jh:
-                self.Var_dict = json.load(jh)
-        except:
-            if not os.path.exists(self.jsonFile):
-                print 'Cannot find the json file at ' + self.jsonFileFile
+        with open(self.jsonFile) as jh:
+            self.var_dict = json.load(jh)
 
     def openExcel(self):
-        try:
-            xl = win32com.client.Dispatch("Excel.Application")
-
-        except:
-            return None
-
-        return xl
+        return win32com.client.DispatchEx("Excel.Application")
 
     def letter2num(self, letters, zbase=False):
         letters = str(letters)
@@ -122,9 +99,9 @@ class ExcelWrapper(Component):
             return
 
         wb = self.workbook
-        namelist = [x.name for x in wb.Names]
+        # namelist = [x.name for x in wb.Names]
 
-        data_x = self.Var_dict
+        data_x = self.var_dict
 
         for key, value in data_x.items():
             if key == "params":
