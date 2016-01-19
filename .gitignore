@@ -9,6 +9,7 @@ develop-eggs/
 host_results/
 sphinx_build/
 .coverage
+cover/
 openmdao_log.txt
 build.out
 
