@@ -3,6 +3,7 @@ import os
 import win32com.client
 from xml.etree import ElementTree as ET
 import json
+import six
 
 
 class ExcelWrapper(Component):
@@ -11,6 +12,8 @@ class ExcelWrapper(Component):
     def __init__(self, excelFile, varFile):
         super(ExcelWrapper, self).__init__()
         self.var_dict = None
+        self.xlInstance = None
+        self.workbook = None
 
         if not varFile.endswith('.json'):
             self.xmlFile = varFile
@@ -22,15 +25,14 @@ class ExcelWrapper(Component):
         for key, value in self.var_dict.items():
             if key == "params":
                 for z in value:
+                    # print(repr(z))
                     self.add_param(**z)
             elif key == "unknowns":
                 for z in value:
-                    print z["name"]
+                    # print z["name"]
                     self.add_output(**z)
 
         self.excelFile = excelFile
-        self.xlInstance = None
-        self.workbook = None
         self.xl_sheet = None
         self.ExcelConnectionIsValid = True
         if not os.path.exists(self.excelFile):
@@ -53,12 +55,16 @@ class ExcelWrapper(Component):
             self.xlInstance = None
     # End __del__
 
+    def _coerce_val(self, variable):
+        if variable['type'] == 'Bool':
+            variable['val'] = variable['val'] == 'True'
+        elif variable['type'] == 'Str':
+            variable['val'] = six.text_type(variable['val'])
+        else:
+            variable['val'] = getattr(six.moves.builtins, variable['type'].lower())(variable['val'])
+
     def create_xml_dict(self):
-        try:
-            tree = ET.parse(self.xmlFile)
-        except:
-            if not os.path.exists(self.xmlFile):
-                print 'Cannot find the xml file at ' + self.xmlFile
+        tree = ET.parse(self.xmlFile)
 
         self.var_dict = {
             "unknowns": [],
@@ -66,15 +72,19 @@ class ExcelWrapper(Component):
         }
         variables = tree.findall("Variable")
         for v in variables:
-            kwargs = dict([(key, v.attrib[key]) for key in ('name', 'val', 'iotype', 'desc', 'units', 'row', 'column', 'sheet', 'type') if key in v.attrib])
+            kwargs = dict([(key, v.attrib[key]) for key in ('name', 'val', 'desc', 'units', 'row', 'column', 'sheet', 'type') if key in v.attrib])
+            self._coerce_val(kwargs)
             if v.attrib['iotype'] == 'in':
                 self.var_dict["params"].append(kwargs)
             elif v.attrib['iotype'] == 'out':
                 self.var_dict["unknowns"].append(kwargs)
 
     def create_json_dict(self):
-        with open(self.jsonFile) as jh:
-            self.var_dict = json.load(jh)
+        with open(self.jsonFile) as jsonReader:
+            self.var_dict = json.load(jsonReader)
+            for vartype in ('params', 'unknowns'):
+                for var in self.var_dict.get(vartype, []):
+                    self._coerce_val(var)
 
     def openExcel(self):
         return win32com.client.DispatchEx("Excel.Application")
@@ -103,43 +113,41 @@ class ExcelWrapper(Component):
 
         data_x = self.var_dict
 
-        for key, value in data_x.items():
-            if key == "params":
-                for z in value:
-                    name = z["name"]
-                    if 'row' and 'column' in z:
-                        if 'sheet' in z:
-                            xl_sheet = self.xlInstance.Sheets(z['sheet'])
-                        else:
-                            xl_sheet = self.xlInstance.Sheets(1)
+        value = data_x.get("params", tuple())
+        for z in value:
+            name = z["name"]
+            if 'row' in z and 'column' in z:
+                xl_sheet = self.xlInstance.Sheets(z.get('sheet', 1))
 
-                        xl_sheet.Select()
-                        xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value = params[name]
-                    else:
-                        self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
+                xl_sheet.Select()
+                xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value = params[name]
+            else:
+                self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
 
-        for key, value in data_x.items():
-            if key == "unknowns":
-                for z in value:
+        value = data_x.get("unknowns", tuple())
+        for z in value:
 
-                    name = z["name"]
-                    if "row" and "column" in z:
-                        if "sheet" in z:
-                            xl_sheet = self.xlInstance.Sheets(z['sheet'])
-                        else:
-                            xl_sheet = self.xlInstance.Sheets(1)
+            name = z["name"]
+            if "row" in z and "column" in z:
+                xl_sheet = self.xlInstance.Sheets(z.get('sheet', 1))
 
-                        xl_sheet.Select()
-                        excel_value = xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value
-                    else:
-                        excel_value = self.xlInstance.Range(wb.Names(name).RefersToLocal).Value
-                    # print excel_value
-                    if z["type"] == 'Float':
-                        unknowns[name] = float(excel_value)
-                    elif z["type"] == 'Int':
-                        unknowns[name] = int(excel_value)
+                xl_sheet.Select()
+                excel_value = xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value
+            else:
+                excel_value = self.xlInstance.Range(wb.Names(name).RefersToLocal).Value
+            # print excel_value
+            if z["type"] == 'Float':
+                unknowns[name] = float(excel_value)
+            elif z["type"] == 'Int':
+                unknowns[name] = int(excel_value)
 
-                    elif z["type"] == 'Bool':
-                        unknowns[name] = excel_value
-                    elif z["type"] == 'Str':
-                        unknowns[name] = str(excel_value)
+            elif z["type"] == 'Bool':
+                unknowns[name] = excel_value
+            elif z["type"] == 'Str':
+                unknowns[name] = str(excel_value)
+
+if __name__ == '__main__':
+    import sys
+    # print(repr(sys.argv[1:]))
+    c = ExcelWrapper(*sys.argv[1:])
+    print(json.dumps({'params': c._init_params_dict, 'unknowns': c._init_unknowns_dict}))
