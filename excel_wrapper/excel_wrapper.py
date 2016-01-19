@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from openmdao.api import Component
 import os
 import win32com.client

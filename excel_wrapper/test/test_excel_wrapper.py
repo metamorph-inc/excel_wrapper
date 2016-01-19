@@ -1,9 +1,11 @@
+from __future__ import absolute_import
 import unittest
 import nose
 import os
 import os.path
 from openmdao.api import Group, Problem, IndepVarComp
 from excel_wrapper.excel_wrapper import ExcelWrapper
+import six
 
 
 class ExcelWrapperTestCase(unittest.TestCase):
@@ -22,7 +24,7 @@ class ExcelWrapperTestCase(unittest.TestCase):
         excelFile = os.path.join(this_dir, "excel_wrapper_test.xlsx")
         jsonFile = os.path.join(this_dir, varFile)
         root.add('ew', ExcelWrapper(excelFile, jsonFile), promotes=['*'])
-        varComp = IndepVarComp(((name, val) for name, val in inputs.iteritems()))
+        varComp = IndepVarComp(((name, val) for name, val in six.iteritems(inputs)))
         root.add('vc', varComp)
         root.connect('vc.x', 'x')
         root.connect('vc.b', 'b')
