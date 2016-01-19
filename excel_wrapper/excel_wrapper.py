@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import print_function
 from openmdao.api import Component
 import os
 import win32com.client
@@ -106,7 +107,7 @@ class ExcelWrapper(Component):
         if not self.ExcelConnectionIsValid or \
             self.xlInstance is None or \
                 self.workbook is None:
-            print "Aborted Execution of Bad ExcelWrapper Component Instance"
+            print("Aborted Execution of Bad ExcelWrapper Component Instance")
             return
 
         wb = self.workbook
@@ -151,4 +152,4 @@ if __name__ == '__main__':
     import sys
     # print(repr(sys.argv[1:]))
     c = ExcelWrapper(*sys.argv[1:])
-    print(json.dumps({'params': c._init_params_dict, 'unknowns': c._init_unknowns_dict}))
+    print((json.dumps({'params': c._init_params_dict, 'unknowns': c._init_unknowns_dict})))
