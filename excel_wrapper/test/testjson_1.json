@@ -36,7 +36,14 @@
             "iotype": "in",
             "val": 1,
             "desc": "input to sin function"
-        }
+        },
+		{
+			"name": "macroVar_in",
+            "type": "Str",
+            "iotype": "in",
+            "val": 1,
+            "desc": "for check on Macro"
+		}
     ],
     "unknowns": [
         {
@@ -72,6 +79,13 @@
             "type": "Float",
             "iotype": "out",
             "desc": "outputofsinfunction",
+            "val": "1.0"
+        },
+		{
+            "name": "macroVar_out",
+			"type": "Str",
+            "iotype": "out",
+            "desc": "Macro Check out variable",
             "val": "1.0"
         }
     ]

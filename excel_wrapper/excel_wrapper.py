@@ -11,11 +11,13 @@ import six
 class ExcelWrapper(Component):
     """ An Excel Wrapper """
 
-    def __init__(self, excelFile, varFile):
+    def __init__(self, excelFile, varFile,*args):
         super(ExcelWrapper, self).__init__()
         self.var_dict = None
         self.xlInstance = None
         self.workbook = None
+        self.macroList = None
+        self.macroExist=False
 
         if not varFile.endswith('.json'):
             self.xmlFile = varFile
@@ -23,6 +25,12 @@ class ExcelWrapper(Component):
         else:
             self.jsonFile = varFile
             self.create_json_dict()
+
+        if len(args)!=0:
+            self.macroExist=True
+            self.macroList=args
+
+
 
         for key, value in self.var_dict.items():
             if key == "params":
@@ -125,6 +133,13 @@ class ExcelWrapper(Component):
                 xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value = params[name]
             else:
                 self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
+
+       #check to see macro and Run them
+        if (self.macroExist):
+            for macro in self.macroList:
+                self.xlInstance.Run(macro)
+
+
 
         value = data_x.get("unknowns", tuple())
         for z in value:
