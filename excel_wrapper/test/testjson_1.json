@@ -42,6 +42,13 @@
 		"iotype": "in",
 		"val": 1,
 		"desc": "for check on Macro"
+	},
+	{
+		"name": "macroVB_in",
+		"type": "Int",
+		"iotype": "in",
+		"val": 1,
+		"desc": "for check on Macro with VB"
 	}],
 	"unknowns": [{
 		"name": "y",
@@ -84,5 +91,12 @@
 		"iotype": "out",
 		"desc": "Macro Check out variable",
 		"val": "1.0"
+	},
+	{
+		"name": "macroVB_out",
+		"type": "Int",
+		"iotype": "out",
+		"desc": "Macro Check out variable with VB",
+		"val": 1
 	}]
 }
