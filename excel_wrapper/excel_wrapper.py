@@ -11,26 +11,24 @@ import six
 class ExcelWrapper(Component):
     """ An Excel Wrapper """
 
-    def __init__(self, excelFile, varFile,*args):
+    def __init__(self, excelfile, varfile, *args):
         super(ExcelWrapper, self).__init__()
         self.var_dict = None
         self.xlInstance = None
         self.workbook = None
         self.macroList = None
-        self.macroExist=False
+        self.macroExist = False
 
-        if not varFile.endswith('.json'):
-            self.xmlFile = varFile
+        if not varfile.endswith('.json'):
+            self.xmlFile = varfile
             self.create_xml_dict()
         else:
-            self.jsonFile = varFile
+            self.jsonFile = varfile
             self.create_json_dict()
 
-        if len(args)!=0:
-            self.macroExist=True
-            self.macroList=args
-
-
+        if len(args) != 0:
+            self.macroExist = True
+            self.macroList = args
 
         for key, value in self.var_dict.items():
             if key == "params":
@@ -42,14 +40,14 @@ class ExcelWrapper(Component):
                     # print z["name"]
                     self.add_output(**z)
 
-        self.excelFile = excelFile
+        self.excelFile = excelfile
         self.xl_sheet = None
         self.ExcelConnectionIsValid = True
         if not os.path.exists(self.excelFile):
             open(self.excelFile)
 
         self.excelFile = os.path.abspath(self.excelFile)
-        xl = self.openExcel()
+        xl = self.openexcel()
         self.xlInstance = xl
         self.workbook = xl.Workbooks.Open(self.excelFile)
         self.workbook = xl.ActiveWorkbook
@@ -61,8 +59,9 @@ class ExcelWrapper(Component):
             self.workbook.Close(SaveChanges=False)
 
         if self.xlInstance is not None:
-            del(self.xlInstance)
+            del (self.xlInstance)
             self.xlInstance = None
+
     # End __del__
 
     def _coerce_val(self, variable):
@@ -82,7 +81,9 @@ class ExcelWrapper(Component):
         }
         variables = tree.findall("Variable")
         for v in variables:
-            kwargs = dict([(key, v.attrib[key]) for key in ('name', 'val', 'desc', 'units', 'row', 'column', 'sheet', 'type') if key in v.attrib])
+            kwargs = dict(
+                [(key, v.attrib[key]) for key in ('name', 'val', 'desc', 'units', 'row', 'column', 'sheet', 'type') if
+                 key in v.attrib])
             self._coerce_val(kwargs)
             if v.attrib['iotype'] == 'in':
                 self.var_dict["params"].append(kwargs)
@@ -96,7 +97,7 @@ class ExcelWrapper(Component):
                 for var in self.var_dict.get(vartype, []):
                     self._coerce_val(var)
 
-    def openExcel(self):
+    def openexcel(self):
         return win32com.client.DispatchEx("Excel.Application")
 
     def letter2num(self, letters, zbase=False):
@@ -105,7 +106,7 @@ class ExcelWrapper(Component):
         res = 0
         weight = len(letters_up) - 1
         for i, c in enumerate(letters_up):
-            res += (ord(c) - 64) * 26**(weight - i)
+            res += (ord(c) - 64) * 26 ** (weight - i)
         if not zbase:
             return res
         return res - 1
@@ -113,8 +114,8 @@ class ExcelWrapper(Component):
     def solve_nonlinear(self, params, unknowns, resids):
 
         if not self.ExcelConnectionIsValid or \
-            self.xlInstance is None or \
-                self.workbook is None:
+                        self.xlInstance is None or \
+                        self.workbook is None:
             print("Aborted Execution of Bad ExcelWrapper Component Instance")
             return
 
@@ -134,12 +135,10 @@ class ExcelWrapper(Component):
             else:
                 self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
 
-       #check to see macro and Run them
+                # check to see macro and Run them
         if (self.macroExist):
             for macro in self.macroList:
                 self.xlInstance.Run(macro)
-
-
 
         value = data_x.get("unknowns", tuple())
         for z in value:
@@ -162,6 +161,7 @@ class ExcelWrapper(Component):
                 unknowns[name] = excel_value
             elif z["type"] == 'Str':
                 unknowns[name] = str(excel_value)
+
 
 if __name__ == '__main__':
     import sys

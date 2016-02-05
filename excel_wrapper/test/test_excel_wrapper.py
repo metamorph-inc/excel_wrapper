@@ -17,15 +17,15 @@ class ExcelWrapperTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def _test_ExcelWrapper(self, varFile, inputs={'x': 10, 'b': True, 's': u'aSdF','macroVar': u'macrocheck','macroVB':12}):
+    def _test_ExcelWrapper(self, varfile, inputs={'x': 10, 'b': True, 's': u'aSdF','macroVar': u'macrocheck','macroVB':12}):
         prob = Problem()
         root = prob.root = Group()
         this_dir = os.path.dirname(os.path.abspath(__file__))
-        excelFile = os.path.join(this_dir, "excel_wrapper_test.xlsm")
-        jsonFile = os.path.join(this_dir, varFile)
-        root.add('ew', ExcelWrapper(excelFile, jsonFile,"Macro5","Sheet3.Transfer_ColA"), promotes=['*'])
-        varComp = IndepVarComp(((name, val) for name, val in six.iteritems(inputs)))
-        root.add('vc', varComp)
+        excelfile = os.path.join(this_dir, "excel_wrapper_test.xlsm")
+        jsonfile = os.path.join(this_dir, varfile)
+        root.add('ew', ExcelWrapper(excelfile, jsonfile,"Macro5","Sheet3.Transfer_ColA"), promotes=['*'])
+        varcomp = IndepVarComp(((name, val) for name, val in six.iteritems(inputs)))
+        root.add('vc', varcomp)
         root.connect('vc.x', 'x')
         root.connect('vc.b', 'b')
         root.connect('vc.s', 's')
@@ -51,7 +51,7 @@ class ExcelWrapperTestCase(unittest.TestCase):
         return self._test_ExcelWrapper("testjson_1.json", inputs={'x': -10, 'b': False, 's': u'TEST','macroVar': u'macroTest','macroVB':12})
 
     def test_ExcelWrapperXml(self):
-       return self._test_ExcelWrapper("excel_wrapper_test.xml")
+        return self._test_ExcelWrapper("excel_wrapper_test.xml")
 
 
 if __name__ == "__main__":
