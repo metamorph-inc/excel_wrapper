@@ -98,5 +98,6 @@
 		"iotype": "out",
 		"desc": "Macro Check out variable with VB",
 		"val": 1
-	}]
+	}],
+	"macros": ["Macro5", "Sheet3.Transfer_ColA"]
 }

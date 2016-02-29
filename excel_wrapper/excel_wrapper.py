@@ -11,13 +11,12 @@ import six
 class ExcelWrapper(Component):
     """ An Excel Wrapper """
 
-    def __init__(self, excelfile, varfile, *args):
+    def __init__(self, excelfile, varfile, macros=[]):
         super(ExcelWrapper, self).__init__()
         self.var_dict = None
         self.xlInstance = None
         self.workbook = None
-        self.macroList = None
-        self.macroExist = False
+        self.macroList = list(macros)
 
         if not varfile.endswith('.json'):
             self.xmlFile = varfile
@@ -25,10 +24,6 @@ class ExcelWrapper(Component):
         else:
             self.jsonFile = varfile
             self.create_json_dict()
-
-        if len(args) != 0:
-            self.macroExist = True
-            self.macroList = args
 
         for key, value in self.var_dict.items():
             if key == "params":
@@ -96,6 +91,7 @@ class ExcelWrapper(Component):
             for vartype in ('params', 'unknowns'):
                 for var in self.var_dict.get(vartype, []):
                     self._coerce_val(var)
+            self.macroList.extend(self.var_dict.get('macros', []))
 
     def openexcel(self):
         return win32com.client.DispatchEx("Excel.Application")
@@ -135,10 +131,8 @@ class ExcelWrapper(Component):
             else:
                 self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
 
-        # check to see macro and Run them
-        if self.macroExist:
-            for macro in self.macroList:
-                self.xlInstance.Run(macro)
+        for macro in self.macroList:
+            self.xlInstance.Run(macro)
 
         value = data_x.get("unknowns", tuple())
         for z in value:

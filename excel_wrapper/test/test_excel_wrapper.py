@@ -4,7 +4,7 @@ import nose
 import os
 import os.path
 from openmdao.api import IndepVarComp, Problem, Group
-from excel_wrapper import ExcelWrapper
+from excel_wrapper.excel_wrapper import ExcelWrapper
 import six
 
 
@@ -22,8 +22,11 @@ class ExcelWrapperTestCase(unittest.TestCase):
         root = prob.root = Group()
         this_dir = os.path.dirname(os.path.abspath(__file__))
         excelfile = os.path.join(this_dir, "excel_wrapper_test.xlsm")
-        jsonfile = os.path.join(this_dir, varfile)
-        root.add('ew', ExcelWrapper(excelfile, jsonfile, "Macro5", "Sheet3.Transfer_ColA"), promotes=['*'])
+        varfile = os.path.join(this_dir, varfile)
+        kwargs = {}
+        if not varfile.endswith('.json'):
+            kwargs['macros'] = ('Macro5', 'Sheet3.Transfer_ColA')
+        root.add('ew', ExcelWrapper(excelfile, varfile, **kwargs), promotes=['*'])
         varcomp = IndepVarComp(((name, val) for name, val in six.iteritems(inputs)))
         root.add('vc', varcomp)
         root.connect('vc.x', 'x')
@@ -45,7 +48,7 @@ class ExcelWrapperTestCase(unittest.TestCase):
         self.assertEqual(float(prob['sheet1_in']) + 100, prob['sheet2_out'], "Excel wrapper fails in multiple sheets")
 
     def test_ExcelWrapperJson(self):
-        return self._test_ExcelWrapper("testjson_1.json")
+        return self._test_ExcelWrapper("testjston_1.json")
 
     def test_ExcelWrapperJson2(self):
         return self._test_ExcelWrapper("testjson_1.json", inputs={'x': -10, 'b': False, 's': u'TEST', 'macroVar': u'macroTest', 'macroVB': 12})
