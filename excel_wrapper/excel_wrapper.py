@@ -11,18 +11,18 @@ import six
 class ExcelWrapper(Component):
     """ An Excel Wrapper """
 
-    def __init__(self, excelfile, varfile, macros=[]):
+    def __init__(self, excelFile, varFile, macros=[]):
         super(ExcelWrapper, self).__init__()
         self.var_dict = None
         self.xlInstance = None
         self.workbook = None
         self.macroList = list(macros)
 
-        if not varfile.endswith('.json'):
-            self.xmlFile = varfile
+        if not varFile.endswith('.json'):
+            self.xmlFile = varFile
             self.create_xml_dict()
         else:
-            self.jsonFile = varfile
+            self.jsonFile = varFile
             self.create_json_dict()
 
         for key, value in self.var_dict.items():
@@ -35,7 +35,7 @@ class ExcelWrapper(Component):
                     # print z["name"]
                     self.add_output(**z)
 
-        self.excelFile = excelfile
+        self.excelFile = excelFile
         self.xl_sheet = None
         self.ExcelConnectionIsValid = True
         if not os.path.exists(self.excelFile):
@@ -54,7 +54,7 @@ class ExcelWrapper(Component):
             self.workbook.Close(SaveChanges=False)
 
         if self.xlInstance is not None:
-            del (self.xlInstance)
+            del self.xlInstance
             self.xlInstance = None
 
     # End __del__
