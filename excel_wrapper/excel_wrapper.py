@@ -135,14 +135,13 @@ class ExcelWrapper(Component):
             else:
                 self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
 
-                # check to see macro and Run them
-        if (self.macroExist):
+        # check to see macro and Run them
+        if self.macroExist:
             for macro in self.macroList:
                 self.xlInstance.Run(macro)
 
         value = data_x.get("unknowns", tuple())
         for z in value:
-
             name = z["name"]
             if "row" in z and "column" in z:
                 xl_sheet = self.xlInstance.Sheets(z.get('sheet', 1))
