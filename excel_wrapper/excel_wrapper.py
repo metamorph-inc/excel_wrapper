@@ -6,10 +6,13 @@ import win32com.client
 from xml.etree import ElementTree as ET
 import json
 import six
+import pythoncom
+import winerror
 
 
 class ExcelWrapper(Component):
-    """ An Excel Wrapper """
+
+    """An Excel OpenMDAO Wrapper."""
 
     def __init__(self, excelFile, varFile, macros=[]):
         super(ExcelWrapper, self).__init__()
@@ -47,8 +50,6 @@ class ExcelWrapper(Component):
         self.workbook = xl.Workbooks.Open(self.excelFile)
         self.workbook = xl.ActiveWorkbook
 
-    # End __init__
-
     def __del__(self):
         if self.workbook is not None:
             self.workbook.Close(SaveChanges=False)
@@ -56,8 +57,6 @@ class ExcelWrapper(Component):
         if self.xlInstance is not None:
             del self.xlInstance
             self.xlInstance = None
-
-    # End __del__
 
     def _coerce_val(self, variable):
         if variable['type'] == 'Bool':
@@ -129,7 +128,14 @@ class ExcelWrapper(Component):
                 xl_sheet.Select()
                 xl_sheet.Cells(z["row"], self.letter2num(z["column"])).value = params[name]
             else:
-                self.xlInstance.Range(wb.Names(name).RefersToLocal).Value = params[name]
+                try:
+                    cell = wb.Names(name)
+                except pythoncom.com_error as e:
+                    if e.hresult == winerror.DISP_E_EXCEPTION:
+                        if (0xffffffff & e.excepinfo[-1]) == 0x800a03ecL:  # seems to be a catch-all Excel error
+                            raise ValueError("Unknown named cell '{}'".format(name))
+                    raise e
+                self.xlInstance.Range(cell.RefersToLocal).Value = params[name]
 
         for macro in self.macroList:
             self.xlInstance.Run(macro)
