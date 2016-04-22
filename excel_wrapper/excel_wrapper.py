@@ -2,12 +2,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from openmdao.api import Component
 import os
+import os.path
 import win32com.client
 from xml.etree import ElementTree as ET
 import json
 import six
 import pythoncom
 import winerror
+import shutil
 
 
 class ExcelWrapper(Component):
@@ -20,6 +22,7 @@ class ExcelWrapper(Component):
         self.xlInstance = None
         self.workbook = None
         self.macroList = list(macros)
+        self.excelFile = None
 
         if not varFile.endswith('.json'):
             self.xmlFile = varFile
@@ -38,12 +41,15 @@ class ExcelWrapper(Component):
                     # print z["name"]
                     self.add_output(**z)
 
-        self.excelFile = excelFile
         self.xl_sheet = None
         self.ExcelConnectionIsValid = True
-        if not os.path.exists(self.excelFile):
-            open(self.excelFile)
+        if not os.path.exists(excelFile):
+            open(excelFile)  # fail fast
 
+        # Excel opens the file with sharing=none. Make a copy so we can run multi-process
+        excelCopy = '{1}_tmp{0}{2}'.format(os.getpid(), *os.path.splitext(excelFile))
+        shutil.copyfile(excelFile, excelCopy)
+        self.excelFile = excelCopy
         self.excelFile = os.path.abspath(self.excelFile)
         xl = self.openexcel()
         self.xlInstance = xl
@@ -57,6 +63,9 @@ class ExcelWrapper(Component):
         if self.xlInstance is not None:
             del self.xlInstance
             self.xlInstance = None
+
+        if self.excelFile:
+            os.unlink(self.excelFile)
 
     def _coerce_val(self, variable):
         if variable['type'] == 'Bool':
@@ -93,7 +102,12 @@ class ExcelWrapper(Component):
             self.macroList.extend(self.var_dict.get('macros', []))
 
     def openexcel(self):
-        return win32com.client.DispatchEx("Excel.Application")
+        try:
+            return win32com.client.DispatchEx("Excel.Application")
+        except pythoncom.com_error as e:
+            if e.hresult & 0xffffffff in (0x800401f3, 0x80040154):
+                raise RuntimeError('Excel is not installed')
+            raise
 
     def letter2num(self, letters, zbase=False):
         letters = str(letters)
