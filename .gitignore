@@ -1,6 +1,7 @@
 generated_images/
 repo_lock/
 devenv/
+venv/
 build/
 dist/
 parts/
