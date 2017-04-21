@@ -1,0 +1,16 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27"
+    - PYTHON: "C:\\Python36"
+cache:
+  - '%LOCALAPPDATA%\pip\cache'
+install:
+  - '%PYTHON%\python -m virtualenv venv'
+  - '.\venv\Scripts\pip install --upgrade -r requirements.txt'
+build_script:
+  - '.\venv\Scripts\python setup.py bdist_wheel'
+test_script:
+# needs Excel
+#  - '.\venv\Scripts\nosetests'
+artifacts:
+  - path: 'dist\*.whl'
