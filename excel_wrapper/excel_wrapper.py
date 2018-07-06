@@ -47,7 +47,7 @@ class ExcelWrapper(Component):
             open(excelFile)  # fail fast
 
         # Excel opens the file with sharing=none. Make a copy so we can run multi-process
-        excelCopy = '{1}_tmp{0}{2}'.format(os.getpid(), *os.path.splitext(excelFile))
+        excelCopy = u'{1}_tmp{0}{2}'.format(os.getpid(), *os.path.splitext(excelFile))
         shutil.copyfile(excelFile, excelCopy)
         self.excelFile = excelCopy
         self.excelFile = os.path.abspath(self.excelFile)
@@ -147,7 +147,7 @@ class ExcelWrapper(Component):
                 except pythoncom.com_error as e:
                     if e.hresult == winerror.DISP_E_EXCEPTION:
                         if (0xffffffff & e.excepinfo[-1]) == 0x800a03ec:  # seems to be a catch-all Excel error
-                            raise ValueError("Unknown named cell '{}'".format(name))
+                            raise ValueError(u"Unknown named cell '{}'".format(name))
                     raise e
                 self.xlInstance.Range(cell.RefersToLocal).Value = params[name]
 
