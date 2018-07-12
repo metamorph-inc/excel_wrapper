@@ -10,6 +10,7 @@ import six
 import pythoncom
 import winerror
 import shutil
+import numpy as np
 
 
 class ExcelWrapper(Component):
@@ -72,6 +73,14 @@ class ExcelWrapper(Component):
             variable['val'] = variable['val'].lower() == 'true'
         elif variable['type'].lower() == 'str':
             variable['val'] = six.text_type(variable['val'])
+        elif variable['type'].lower() == 'floatarray':
+            variable['pass_by_obj']=True
+            variable['val'] = np.zeros(tuple(variable['dims']))
+            del variable['dims']
+        elif variable['type'].lower() == 'strarray':
+            variable['pass_by_obj']=True
+            variable['val'] = np.chararray(tuple(variable['dims']))
+            del variable['dims']
         else:
             variable['val'] = getattr(six.moves.builtins, variable['type'].lower())(variable['val'])
 
@@ -149,7 +158,16 @@ class ExcelWrapper(Component):
                         if (0xffffffff & e.excepinfo[-1]) == 0x800a03ec:  # seems to be a catch-all Excel error
                             raise ValueError(u"Unknown named cell '{}'".format(name))
                     raise e
-                self.xlInstance.Range(cell.RefersToLocal).Value = params[name]
+                if z["type"] == 'FloatArray' or z["type"] == 'StrArray':
+                    def totuple(a):
+                        try:
+                            return tuple(totuple(i) for i in a)
+                        except TypeError:
+                            return a
+                    
+                    self.xlInstance.Range(cell.RefersToLocal).Value = totuple(params[name])
+                else:
+                    self.xlInstance.Range(cell.RefersToLocal).Value = params[name]
 
         for macro in self.macroList:
             self.xlInstance.Run(macro)
@@ -169,11 +187,14 @@ class ExcelWrapper(Component):
                 unknowns[name] = float(excel_value)
             elif z["type"] == 'Int':
                 unknowns[name] = int(excel_value)
-
             elif z["type"] == 'Bool':
                 unknowns[name] = excel_value
             elif z["type"] == 'Str':
                 unknowns[name] = str(excel_value)
+            elif z["type"] == 'FloatArray':
+                unknowns[name] = np.array(excel_value)
+            elif z["type"] == 'StrArray':
+                unknowns[name] = np.array(excel_value)
 
 
 if __name__ == '__main__':
