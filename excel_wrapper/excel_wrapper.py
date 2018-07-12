@@ -161,7 +161,10 @@ class ExcelWrapper(Component):
                 if z["type"] == 'FloatArray' or z["type"] == 'StrArray':
                     def totuple(a):
                         try:
-                            return tuple(totuple(i) for i in a)
+                            if type(a) is np.unicode_:
+                                return a
+                            else:
+                                return tuple(totuple(i) for i in a)
                         except TypeError:
                             return a
                     
