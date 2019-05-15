@@ -53,7 +53,7 @@ kwargs = {'author': 'Metamorph',
  'package_dir': {'excel_wrapper': 'excel_wrapper'},
  'packages': ['excel_wrapper', 'excel_wrapper.test'],
  'url': '',
- 'version': '0.5',
+ 'version': '0.6',
  'zip_safe': False}
 
 
