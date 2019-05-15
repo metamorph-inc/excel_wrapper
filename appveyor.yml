@@ -11,8 +11,20 @@ install:
   - '.\venv\Scripts\pip install --upgrade -r requirements.txt'
 build_script:
   - '.\venv\Scripts\python setup.py bdist_wheel'
+  - 'move /y dist\*.whl .'
 test_script:
 # needs Excel
 #  - '.\venv\Scripts\nosetests'
-artifacts:
-  - path: 'dist\*.whl'
+after_build:
+  - ps: if ( $env:PYTHON -eq 'C:\Python27' ) { Get-ChildItem .\*.whl | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name -DeploymentName whl } }
+deploy:
+  - provider: S3
+    access_key_id: AKIAJCSEQOUWIU2HK3SQ
+    secret_access_key:
+      secure: gKHiok/Emkvb298mPcxWXTn2ttSFnRTEmsaTYex3qZlqHSRVptKjvD2bVeA4XJ7a
+    bucket: pypi.metamorphsoftware.com
+    region: us-east-1
+    artifact: whl
+    folder: excel-wrapper
+    on:
+      appveyor_repo_tag: true
